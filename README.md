@@ -1,40 +1,64 @@
-# News App — Sunucusuz Haber Okuyucu
+# Haberlerim — Expo (Android + iOS)
 
-Android ve iOS için Flutter ile yazılmış, kişisel kullanıma yönelik bir haber uygulaması. Tüm işler telefonda çalışır — sunucu yoktur.
+Kişisel kullanım için, çoğunlukla cihazda çalışan haber okuyucu. RSS varsa
+RSS'ten, yoksa anasayfa scrape ederek haberleri çeker; SQLite + FTS5 ile
+yerelde saklar; istenirse haberi online bir sağlayıcıya (MyMemory /
+LibreTranslate / DeepL) yollayıp Türkçe çevirisini alır.
+
+## Çalıştırmak (Mac/PC gerekmez)
+
+1. iPhone'una **Expo Go**'yu App Store'dan indir.
+2. Bu repoyu Snack veya bir bilgisayar üzerinde aç. Yerelde çalıştırıyorsan:
+   ```bash
+   npm install
+   npx expo start
+   ```
+3. Çıkan QR kodu **Expo Go** içinden okut → uygulama anında telefonda açılır.
+4. Hot reload: kod değişir, telefonda anında güncellenir.
 
 ## Özellikler
 
-- RSS/Atom varsa RSS, yoksa HTML scrape ile haber çeker
-- Kullanıcı kaynakları ekleyip çıkarabilir
-- 5 dakikada bir (ayarlanabilir) arka plan fetch
-- Yabancı dilde haberleri cihaz üstünde (Google ML Kit) Türkçeye çevirir; internet gerekmez
-- Tam metin arama (SQLite FTS5)
-- Paylaş, favori, okundu işaretleme
-- Sade okuma ekranı, açık/koyu tema, ayarlanabilir yazı tipi
+- Kullanıcının eklediği siteler (RSS auto-discovery + HTML fallback)
+- Pull-to-refresh + infinite scroll
+- Cihaz açıkken her 5 dk'da otomatik yenileme
+- Arka plan fetch (`expo-background-fetch`, iOS ≥15dk OS kararı, Android WorkManager)
+- Çeviri sağlayıcı seçilebilir:
+  - **MyMemory** (varsayılan, anahtarsız, ücretsiz, ~5000 karakter/gün)
+  - **LibreTranslate** (kendi self-hosted ya da public)
+  - **DeepL** (ücretsiz/paid, API key)
+- SQLite FTS5 ile gerçek arama
+- Sistem paylaşım sheet'i (`expo-sharing` + `Share`)
+- Açık/koyu tema, ayarlanabilir okuma yazı boyutu, sade/serif okuma görünümü
 
-## Kurulum
+## Sınırlar
 
-```bash
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-flutter run
+- **Çeviri online**: MyMemory/LibreTranslate/DeepL — internet gerekir. (ML Kit gibi
+  cihaz üstü çeviriler Expo Go sandbox'ında çalışmaz; bu uygulama Expo Go ile
+  çalışacak şekilde tasarlandı.)
+- **Arka plan iOS**: 5 dk garanti değil. iOS aralıkları sistem kararına bağlı.
+- **HTML scraping** site yapısı değişirse kırılgan olabilir.
+
+## Yapı
+
+```
+app/                   # expo-router ekranları
+  _layout.tsx
+  index.tsx            # feed (anasayfa)
+  article/[id].tsx     # makale okuma
+  sources.tsx          # kaynak yönetimi
+  search.tsx           # FTS5 arama
+  settings.tsx         # ayarlar
+src/
+  db/                  # SQLite + FTS5 schema, queries
+  data/                # rssFetcher, htmlFetcher, readability, translator, refresh
+  state/               # AsyncStorage settings store
+  background/          # expo-background-fetch task
+  theme/               # palette
+  utils/               # format helpers
 ```
 
-### Gereklilikler
-- Flutter 3.24+
-- Android: minSdk 23 (Android 6.0+)
-- iOS: 13+ (build için macOS + Xcode gerekir)
+## Production Build (sonradan)
 
-## Mimari
-
-Katmanlar:
-- `lib/core/` — DB (drift), HTTP (dio), background worker (workmanager), translation (MLKit), tema, router
-- `lib/data/` — kaynak keşfi, RSS/HTML fetcher'ları, repository'ler
-- `lib/features/` — feed, article, sources, search, settings ekranları
-
-## Kısıtlar
-
-- **iOS arka plan:** Apple BGTaskScheduler ile arka plan fetch ~15dk ve OS kararına bağlıdır. 5dk garanti değildir; uygulama önde iken tam 5dk çalışır.
-- **Android 15+:** Foreground service izni gerekir (manifest'te tanımlı).
-- **ML Kit çeviri modeli:** Dil başına ~30MB, ilk çeviride indirilir.
-- **HTML scraping** site yapısı değişirse kırılabilir; Readability genel bir çözümdür.
+Telefona Expo Go olmadan kurmak istersen:
+- **Android APK**: `eas build -p android --profile preview` (EAS Build, ücretsiz tier)
+- **iOS TestFlight**: `eas build -p ios` + Apple Developer Program ($99/yıl)

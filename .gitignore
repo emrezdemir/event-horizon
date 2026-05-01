@@ -1,48 +1,36 @@
-# Flutter / Dart
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.metadata
-pubspec.lock
+# Node / Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+# Native
+ios/
+android/
+
+# Env
+.env
+.env.local
+
+# Build outputs
+*.jsbundle
+*.tsbuildinfo
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
 
 # IDE
 .idea/
 .vscode/
-*.iml
-*.ipr
-*.iws
-
-# Generated
-*.g.dart
-*.freezed.dart
-
-# Android
-android/.gradle/
-android/local.properties
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/key.properties
-**/*.keystore
-**/*.jks
-
-# iOS
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Flutter.framework/
-ios/Flutter/Flutter.podspec
-ios/Flutter/Generated.xcconfig
-ios/Flutter/flutter_export_environment.sh
-ios/Runner.xcworkspace/xcuserdata/
-ios/Runner.xcodeproj/project.xcworkspace/xcuserdata/
-ios/Runner.xcodeproj/xcuserdata/
-
-# macOS
+*.swp
 .DS_Store
 
-# Logs
-*.log
+# Tests
+coverage/
+
+# TypeScript
+expo-env.d.ts
