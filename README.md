@@ -6,6 +6,10 @@ yenisi geldiğinde haber veriyor.
 
 Expo (React Native) ile yazılı, Android ve iOS'ta aynı kod.
 
+> **AI-native**: kodun tamamı Claude (Anthropic) ile yazıldı. Sıfırdan iskelet,
+> feature'lar, refactor, README, commit mesajları — hepsi konuşa konuşa çıktı.
+> Klavyede tek satır JS/TS yazılmadı.
+
 ## Nasıl çalışıyor
 
 Bir site URL'si veriyorsun. Uygulama önce RSS feed'i bulmaya çalışıyor,
@@ -84,6 +88,16 @@ de aynı paket adıyla başlamalı.
 - iOS arka plan aralıklarını sistem belirler, 15 dakika altı garanti değil
 - HTML scraping site yapısı değiştiğinde kırılabilir
 - Expo Go'da bildirim ve background fetch tam çalışmaz; dev build şart
+
+## Yazılım nasıl üretildi
+
+Tüm geliştirme süreci [Claude Code](https://claude.com/claude-code) üzerinden
+yürütüldü. İlk sürüm Flutter'dı, sonra "Expo Go'da çalışsın, derleme makinem
+olmasın" diye Expo (TypeScript) üzerine baştan yazıldı. Sonraki iyileştirmeler
+de (çevirinin kaldırılması, bildirimler, pagination düzenlemeleri) aynı
+şekilde, IDE'ye geçmeden, Claude ile konuşarak yapıldı.
+
+Commit log'larında `Co-Authored-By: Claude` izini görebilirsin.
 
 ## Lisans
 
