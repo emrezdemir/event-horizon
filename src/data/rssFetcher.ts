@@ -31,7 +31,7 @@ export async function fetchRss(source: { id: number; url: string }): Promise<Art
 function parseRss(channel: any, sourceId: number): ArticleDraft[] {
   const items = toArray(channel.item);
   return items
-    .map((item: any) => {
+    .map((item: any): ArticleDraft | null => {
       const link = textOf(item.link) ?? textOf(item.guid);
       if (!link) return null;
       const title = textOf(item.title) ?? link;
