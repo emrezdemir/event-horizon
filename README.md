@@ -1,60 +1,108 @@
-# Haberlerim
+<h1 align="center">Haberlerim</h1>
 
-Kendi RSS okuyucumu istedim, çıkan iş bu. Telefonda çalışıyor, sunucu yok,
-hesap yok. Eklediğin sitelerden haberleri çekiyor, telefonun içinde tutuyor,
-yenisi geldiğinde haber veriyor.
+<p align="center">
+  Sunucusuz, tamamen cihazda çalışan bir haber okuyucu.<br/>
+  RSS varsa RSS'ten, yoksa anasayfa scrape ederek haberleri çeker.<br/>
+  Telefonun içinde tutar, yenisi geldiğinde bildirim atar.
+</p>
 
-Expo (React Native) ile yazılı, Android ve iOS'ta aynı kod.
+<p align="center">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-iOS%20%7C%20Android-lightgrey.svg" />
+  <img alt="Expo" src="https://img.shields.io/badge/Expo%20SDK-54-000020?logo=expo&logoColor=white" />
+  <img alt="React Native" src="https://img.shields.io/badge/React%20Native-0.81-61dafb?logo=react&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white" />
+  <img alt="Built with Claude" src="https://img.shields.io/badge/AI--native-Claude-d97706" />
+  <a href="https://github.com/emrezdemir/event-horizon/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/emrezdemir/event-horizon" /></a>
+</p>
 
-> **AI-native**: kodun tamamı Claude (Anthropic) ile yazıldı. Sıfırdan iskelet,
-> feature'lar, refactor, README, commit mesajları — hepsi konuşa konuşa çıktı.
-> Klavyede tek satır JS/TS yazılmadı.
+---
 
-## Nasıl çalışıyor
+## İçindekiler
 
-Bir site URL'si veriyorsun. Uygulama önce RSS feed'i bulmaya çalışıyor,
-bulamazsa anasayfayı parse edip linkleri çıkarıyor. Çektiği her şey SQLite'a
-yazılıyor, FTS5 ile aranabilir oluyor. Telefon arka plandayken
-`expo-background-fetch` belli aralıklarla tekrar yokluyor; yeni bir şey
-varsa bildirim atıyor.
+- [Hakkında](#hakkında)
+- [Özellikler](#özellikler)
+- [Yenilikler](#yenilikler)
+- [Hızlı başlangıç](#hızlı-başlangıç)
+- [Mağaza için build](#mağaza-için-build)
+- [Mimari](#mimari)
+- [Nasıl yazıldı — AI-native](#nasıl-yazıldı--ai-native)
+- [Yol haritası](#yol-haritası)
+- [Katkı](#katkı)
+- [Lisans](#lisans)
+- [İletişim](#i̇letişim)
 
-Çeviri yok, paylaşım sistem sheet'ini kullanıyor, makaleyi okurken tarayıcıda
-açabiliyorsun. Tema sistemi takip ediyor ama el ile de değiştirebilirsin.
+---
 
-## Denemek
+## Hakkında
+
+Kendi RSS okuyucumu istedim, çıkan iş bu. Hesap yok, sunucu yok, takip yok.
+Bir site URL'si veriyorsun; uygulama önce RSS feed'i arıyor, yoksa anasayfayı
+parse edip haber linklerini çıkarıyor. Çektiği her şey telefonun içindeki
+SQLite'a yazılıyor, FTS5 ile aranabilir hale geliyor. Arka plandayken belli
+aralıklarla yokluyor, yeni haber varsa bildirim gönderiyor.
+
+Expo (React Native + TypeScript) ile yazılı — Android ve iOS'ta aynı kod.
+
+## Özellikler
+
+- **Kaynak yönetimi** — URL ver, kaynak listene eklensin. RSS auto-discovery,
+  yoksa HTML scrape fallback'i (`node-html-parser` + okunabilirlik çıkarımı).
+- **Yerel depolama** — `expo-sqlite` + FTS5 sayesinde tam metin arama,
+  diakritiksiz Türkçe arama desteği.
+- **Sonsuz kaydırma** — Race-safe pagination, ID-set ile dedup, sayfa sonu
+  göstergesi.
+- **Otomatik yenileme** — Uygulama açıkken her 5 dakikada bir, arka planda
+  `expo-background-fetch` ile (iOS aralıklarını sistem belirler, Android'de
+  WorkManager).
+- **Bildirim** — Yeni haber geldiğinde local notification. Tek haberse başlığı,
+  çoklu haberse özet listeyi gösterir. Ayarlardan kapatılabilir.
+- **Okuma deneyimi** — Serif gövde fontu, ayarlanabilir yazı boyutu, açık/koyu
+  tema (sistemi takip eder).
+- **Paylaşım** — Sistem paylaşım sheet'i, makaleyi tarayıcıda açma,
+  favorilere ekleme, okundu/okunmadı durumu.
+
+## Yenilikler
+
+Tam liste için bkz. [CHANGELOG.md](CHANGELOG.md).
+
+**[Unreleased]**
+- Yeni haber geldiğinde local notification (`expo-notifications`).
+- Feed sıralamasına stabil tiebreaker (`id DESC`) eklendi.
+- Sonsuz kaydırma yeniden yazıldı — race koruması, dedup, "Hepsi yüklendi"
+  göstergesi.
+- Çeviri özelliği kaldırıldı (MyMemory / LibreTranslate / DeepL).
+
+## Hızlı başlangıç
+
+Bilgisayardan Expo Go ile denemek:
 
 ```bash
+git clone https://github.com/emrezdemir/event-horizon.git
+cd event-horizon
 npm install
 npx expo start
 ```
 
-QR kodu Expo Go ile okut, çalışır. Bildirim ve arka plan fetch'i ciddi
-test etmek istiyorsan dev build alman lazım, alttaki bölüme bak.
+Çıkan QR'ı telefonundaki **Expo Go** ile okut. Hot reload aktif.
 
-## Dosyalar nerede
+> ⚠️ Expo Go'da bildirim ve arka plan fetch tam çalışmaz. Bunları gerçek
+> anlamda test etmek için dev build alman gerek — aşağıya bak.
 
-```
-app/
-  _layout.tsx
-  index.tsx              feed
-  article/[id].tsx       makale okuma
-  sources.tsx            kaynak ekle/sil/kapat
-  search.tsx             arama
-  settings.tsx           ayarlar
-src/
-  db/                    sqlite, fts5, sorgular
-  data/                  rss/html fetcher, refresh
-  state/                 async storage settings
-  background/            background fetch task
-  notifications.ts       expo-notifications wrapper
-  theme/                 palet
-  utils/                 format yardımcıları
-```
+### Komutlar
 
-## Mağazaya çıkarmak
+| Komut                | Ne yapar                                  |
+| -------------------- | ----------------------------------------- |
+| `npm start`          | Expo dev server                           |
+| `npm run android`    | Expo + Android cihaz/emulator             |
+| `npm run ios`        | Expo + iOS simulator                      |
+| `npm run typecheck`  | TypeScript kontrolü                       |
+| `npm run lint`       | `expo lint`                               |
 
-Expo Go bilgisayarsız hızlı deneme için iyi ama bildirim ve background fetch
-orada eksik kalıyor. Gerçek build için EAS:
+## Mağaza için build
+
+[EAS Build](https://docs.expo.dev/build/introduction/) ile. Tek seferlik
+kurulum:
 
 ```bash
 npm i -g eas-cli
@@ -63,42 +111,116 @@ eas init
 eas build:configure
 ```
 
-Sonra:
+Üç profille çalışıyoruz:
 
-- `eas build --profile development --platform android` — Metro'ya bağlanan
-  dev build, native bir şey değişene kadar tekrar build gerekmez
-- `eas build --profile preview --platform android` — release modunda APK,
-  telefona kurup test
-- `eas build --profile production --platform android` — Play Store için AAB
-- iOS'ta da aynısı, ama Apple Developer Program ($99/yıl) gerek
+| Profil        | Ne için                                                  |
+| ------------- | -------------------------------------------------------- |
+| `development` | Metro'ya bağlanan dev build; native değişene kadar yeter |
+| `preview`     | Release modunda APK, telefona kur ve dene                |
+| `production`  | Mağaza için AAB / IPA, build number otomatik artar       |
 
-Mağazaya yüklemek:
+Build & submit:
 
 ```bash
+eas build --profile production --platform android
+eas build --profile production --platform ios
+
 eas submit --profile production --platform android
 eas submit --profile production --platform ios
 ```
 
-Production'a çıkmadan önce `app.json` içinde `bundleIdentifier` ve `package`
-değerlerini değiştir, şu an placeholder. `BGTaskSchedulerPermittedIdentifiers`
-de aynı paket adıyla başlamalı.
+Mağazaya çıkmadan önce `app.json` içindeki placeholder değerleri değiştir:
 
-## Bilinen sınırlar
+- `ios.bundleIdentifier` → kendi domain'inin ters notasyonu
+- `android.package` → aynısı
+- `ios.infoPlist.BGTaskSchedulerPermittedIdentifiers` → aynı paket adıyla
+  başlamalı
 
-- iOS arka plan aralıklarını sistem belirler, 15 dakika altı garanti değil
-- HTML scraping site yapısı değiştiğinde kırılabilir
-- Expo Go'da bildirim ve background fetch tam çalışmaz; dev build şart
+Apple Developer Program $99/yıl, Google Play Console tek seferlik $25.
 
-## Yazılım nasıl üretildi
+## Mimari
 
-Tüm geliştirme süreci [Claude Code](https://claude.com/claude-code) üzerinden
-yürütüldü. İlk sürüm Flutter'dı, sonra "Expo Go'da çalışsın, derleme makinem
-olmasın" diye Expo (TypeScript) üzerine baştan yazıldı. Sonraki iyileştirmeler
-de (çevirinin kaldırılması, bildirimler, pagination düzenlemeleri) aynı
-şekilde, IDE'ye geçmeden, Claude ile konuşarak yapıldı.
+```
+app/                       # expo-router ekranları (file-based routing)
+├── _layout.tsx            # root stack + tema + arka plan zamanlayıcı
+├── index.tsx              # feed (anasayfa)
+├── article/[id].tsx       # makale okuma ekranı
+├── sources.tsx            # kaynak ekle / sil / aç-kapa
+├── search.tsx             # FTS5 arama
+└── settings.tsx           # ayarlar
 
-Commit log'larında `Co-Authored-By: Claude` izini görebilirsin.
+src/
+├── db/
+│   ├── client.ts          # sqlite open + migrate + FTS5 trigger'lar
+│   ├── queries.ts         # tipli sorgular (page, search, upsert, ...)
+│   └── types.ts           # Article / Source / Draft tipleri
+├── data/
+│   ├── rssFetcher.ts      # fast-xml-parser ile RSS/Atom
+│   ├── htmlFetcher.ts     # node-html-parser ile anasayfa scrape
+│   ├── readability.ts     # makale içeriği ayıklama
+│   ├── sourceDiscovery.ts # RSS auto-discovery + favicon
+│   ├── http.ts            # ortak fetch katmanı
+│   └── refresh.ts         # tüm kaynakları yenile, yenileri döndür
+├── state/
+│   └── settings.ts        # AsyncStorage + useSyncExternalStore
+├── background/
+│   └── task.ts            # expo-background-fetch task'ı
+├── notifications.ts       # expo-notifications wrapper (izin + tetik)
+├── theme/                 # palet, koyu/açık tema
+└── utils/                 # tarih, format
+```
+
+Her şey cihazda, dış servis sadece doğrudan haber sitesine yapılan HTTP
+istekleri. Telemetri yok, analytics yok, kimlik doğrulama yok.
+
+## Nasıl yazıldı — AI-native
+
+Bu projenin **tek bir satırı bile elle yazılmadı**. Hepsi
+[Claude Code](https://claude.com/claude-code) (Anthropic) üzerinden,
+konuşa konuşa, doğal dilde istekler verilerek üretildi.
+
+- İlk sürüm Flutter'dı; "derleme makinem olmasın, Expo Go ile çalışsın"
+  ihtiyacına göre Expo + TypeScript'e baştan yazıldı.
+- Çevirinin kaldırılması, bildirim altyapısının eklenmesi, pagination'ın
+  race-safe hale getirilmesi gibi iyileştirmeler de aynı şekilde — IDE
+  açılmadan, kod düzenleyiciye dokunulmadan yapıldı.
+- Bu README dahil tüm dokümanlar Claude tarafından yazıldı.
+
+Commit log'unda `Co-Authored-By: Claude` izini görebilirsin. Bu proje aynı
+zamanda "AI-native development" pratiğinin bir vitrini: planlama, kodlama,
+review, refactor, dokümantasyon — hepsi tek bir konuşma akışında.
+
+## Yol haritası
+
+- [ ] Bildirime tıklayınca ilgili makaleye açılış (deep link)
+- [ ] Favoriler ekranı
+- [ ] Kategori / etiket bazlı filtreleme
+- [ ] OPML import/export
+- [ ] Offline okuma (içeriği prefetch)
+- [ ] Widget desteği (iOS / Android)
+
+## Katkı
+
+Issue ve PR'lar açık. Geliştirme yapacaksan:
+
+1. Fork al, branch aç (`feat/...` veya `fix/...`)
+2. `npm run typecheck` ve `npm run lint` temiz olsun
+3. Türkçe veya İngilizce commit yazabilirsin, conventional commit prefix
+   tercih edilir (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
+4. PR'da neyi neden yaptığını kısaca yaz
+
+Büyük değişiklik düşünüyorsan önce bir issue aç, üzerine konuşalım.
 
 ## Lisans
 
-MIT — `LICENSE` dosyasına bak.
+[MIT](LICENSE) — özgürce kullan, kopyala, değiştir, dağıt. Sadece copyright
+bildirimini koru.
+
+## İletişim
+
+- **Repo & issues:** [github.com/emrezdemir/event-horizon](https://github.com/emrezdemir/event-horizon)
+- **Geliştirici:** Emre Özdemir — [@emrezdemir](https://github.com/emrezdemir)
+
+<p align="center">
+  <sub>Türkiye'den, Claude ile birlikte.</sub>
+</p>
