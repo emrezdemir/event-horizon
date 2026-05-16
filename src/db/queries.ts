@@ -46,7 +46,8 @@ export async function markSourceFetched(id: number): Promise<void> {
 
 // ───────── Articles ─────────
 
-export async function upsertArticle(d: ArticleDraft): Promise<void> {
+/** Returns true when a new article row was inserted, false on update. */
+export async function upsertArticle(d: ArticleDraft): Promise<boolean> {
   const db = await getDb();
   const existing = await db.getFirstAsync<{ id: number }>(
     'SELECT id FROM articles WHERE url = ?',
@@ -57,9 +58,7 @@ export async function upsertArticle(d: ArticleDraft): Promise<void> {
       `UPDATE articles SET
          title = ?, author = COALESCE(?, author), published_at = COALESCE(?, published_at),
          summary = COALESCE(?, summary), content_html = COALESCE(?, content_html),
-         content_text = COALESCE(?, content_text), original_lang = COALESCE(?, original_lang),
-         translated_title = COALESCE(?, translated_title),
-         translated_content = COALESCE(?, translated_content),
+         content_text = COALESCE(?, content_text),
          image_url = COALESCE(?, image_url)
        WHERE id = ?`,
       d.title,
@@ -68,19 +67,15 @@ export async function upsertArticle(d: ArticleDraft): Promise<void> {
       d.summary ?? null,
       d.content_html ?? null,
       d.content_text ?? null,
-      d.original_lang ?? null,
-      d.translated_title ?? null,
-      d.translated_content ?? null,
       d.image_url ?? null,
       existing.id,
     );
-    return;
+    return false;
   }
   await db.runAsync(
     `INSERT INTO articles
-      (source_id, url, title, author, published_at, summary, content_html, content_text,
-       original_lang, translated_title, translated_content, image_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (source_id, url, title, author, published_at, summary, content_html, content_text, image_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     d.source_id,
     d.url,
     d.title,
@@ -89,11 +84,9 @@ export async function upsertArticle(d: ArticleDraft): Promise<void> {
     d.summary ?? null,
     d.content_html ?? null,
     d.content_text ?? null,
-    d.original_lang ?? null,
-    d.translated_title ?? null,
-    d.translated_content ?? null,
     d.image_url ?? null,
   );
+  return true;
 }
 
 const ARTICLE_JOIN = `
@@ -109,10 +102,26 @@ export async function pageArticles(limit: number, offset: number): Promise<Artic
   const db = await getDb();
   return db.getAllAsync<ArticleWithSource>(
     `${ARTICLE_JOIN}
-     ORDER BY COALESCE(a.published_at, a.fetched_at) DESC
+     ORDER BY COALESCE(a.published_at, a.fetched_at) DESC, a.id DESC
      LIMIT ? OFFSET ?`,
     limit,
     offset,
+  );
+}
+
+export async function countArticles(): Promise<number> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM articles');
+  return row?.n ?? 0;
+}
+
+export async function getNewArticlesSince(timestamp: number): Promise<ArticleWithSource[]> {
+  const db = await getDb();
+  return db.getAllAsync<ArticleWithSource>(
+    `${ARTICLE_JOIN}
+     WHERE a.fetched_at >= ?
+     ORDER BY COALESCE(a.published_at, a.fetched_at) DESC, a.id DESC`,
+    timestamp,
   );
 }
 
@@ -133,24 +142,6 @@ export async function setArticleRead(id: number, read: boolean): Promise<void> {
 export async function setArticleFavorite(id: number, fav: boolean): Promise<void> {
   const db = await getDb();
   await db.runAsync('UPDATE articles SET is_favorite = ? WHERE id = ?', fav ? 1 : 0, id);
-}
-
-export async function updateTranslation(
-  id: number,
-  patch: { translated_title?: string | null; translated_content?: string | null; original_lang?: string | null },
-): Promise<void> {
-  const db = await getDb();
-  await db.runAsync(
-    `UPDATE articles SET
-       translated_title = COALESCE(?, translated_title),
-       translated_content = COALESCE(?, translated_content),
-       original_lang = COALESCE(?, original_lang)
-     WHERE id = ?`,
-    patch.translated_title ?? null,
-    patch.translated_content ?? null,
-    patch.original_lang ?? null,
-    id,
-  );
 }
 
 export async function searchArticles(query: string, limit = 50): Promise<ArticleWithSource[]> {

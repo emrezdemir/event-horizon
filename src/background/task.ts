@@ -2,6 +2,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 
 import { refreshAllSources } from '@/data/refresh';
+import { notifyNewArticles } from '@/notifications';
 import { getSettings } from '@/state/settings';
 
 export const REFRESH_TASK = 'news-app.refresh';
@@ -9,6 +10,9 @@ export const REFRESH_TASK = 'news-app.refresh';
 TaskManager.defineTask(REFRESH_TASK, async () => {
   try {
     const result = await refreshAllSources();
+    if (result.newArticles.length > 0) {
+      await notifyNewArticles(result.newArticles).catch(() => {});
+    }
     return result.totalNew > 0
       ? BackgroundFetch.BackgroundFetchResult.NewData
       : BackgroundFetch.BackgroundFetchResult.NoData;

@@ -120,7 +120,7 @@ export default function SearchScreen() {
                     numberOfLines={2}
                     style={{ color: palette.text, fontWeight: '600' }}
                   >
-                    {item.translated_title ?? item.title}
+                    {item.title}
                   </Text>
                   <Text style={{ color: palette.textMuted, fontSize: 12, marginTop: 4 }}>
                     {item.source_title}

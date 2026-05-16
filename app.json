@@ -26,12 +26,14 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "RECEIVE_BOOT_COMPLETED",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
       "expo-router",
       "expo-background-fetch",
+      "expo-notifications",
       [
         "expo-sqlite",
         {

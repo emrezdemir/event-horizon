@@ -2,30 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
-export type TranslationProvider = 'mymemory' | 'libretranslate' | 'deepl';
 
 export interface Settings {
   fetchMinutes: number;
   themeMode: ThemeMode;
-  translateOnOpen: boolean;
-  translateTitlesOnRefresh: boolean;
-  defaultSourceLang: string; // 'en', 'de', 'fr' …
-  translationProvider: TranslationProvider;
-  translationApiKey: string;
-  translationEndpoint: string; // for LibreTranslate self-hosted
   readerFontScale: number;
+  notifyOnNew: boolean;
 }
 
 const DEFAULTS: Settings = {
   fetchMinutes: 15,
   themeMode: 'system',
-  translateOnOpen: false,
-  translateTitlesOnRefresh: false,
-  defaultSourceLang: 'en',
-  translationProvider: 'mymemory',
-  translationApiKey: '',
-  translationEndpoint: '',
   readerFontScale: 1.0,
+  notifyOnNew: true,
 };
 
 const KEY = 'settings.v1';

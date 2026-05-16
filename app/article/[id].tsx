@@ -6,7 +6,6 @@ import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   Share,
@@ -15,12 +14,10 @@ import {
   View,
 } from 'react-native';
 
-import { translateToTurkish } from '@/data/translator';
 import {
   getArticle,
   setArticleFavorite,
   setArticleRead,
-  updateTranslation,
 } from '@/db/queries';
 import type { ArticleWithSource } from '@/db/types';
 import { useSettings } from '@/state/settings';
@@ -35,63 +32,20 @@ export default function ArticleScreen() {
   const navigation = useNavigation();
 
   const [article, setArticle] = useState<ArticleWithSource | null>(null);
-  const [showTranslation, setShowTranslation] = useState(true);
-  const [translating, setTranslating] = useState(false);
 
   const reload = useCallback(async () => {
     const a = await getArticle(articleId);
     setArticle(a);
     if (a && !a.is_read) await setArticleRead(a.id, true);
-    setShowTranslation(!!a?.translated_content || !!a?.translated_title);
   }, [articleId]);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
-  const ensureTranslated = useCallback(async () => {
-    if (!article) return;
-    if (article.translated_title || article.translated_content) return;
-    setTranslating(true);
-    try {
-      const cfg = {
-        provider: settings.translationProvider,
-        apiKey: settings.translationApiKey || undefined,
-        endpoint: settings.translationEndpoint || undefined,
-      };
-      const titleR = await translateToTurkish(
-        { text: article.title, sourceLang: settings.defaultSourceLang },
-        cfg,
-      );
-      const body = article.content_text ?? article.summary ?? '';
-      const bodyR = body
-        ? await translateToTurkish(
-            { text: body, sourceLang: settings.defaultSourceLang },
-            cfg,
-          )
-        : { text: null, source: settings.defaultSourceLang };
-      await updateTranslation(article.id, {
-        translated_title: titleR.source === 'tr' ? null : titleR.text,
-        translated_content: bodyR.text ?? null,
-        original_lang: titleR.source,
-      });
-      await reload();
-    } catch (e) {
-      Alert.alert('Çeviri başarısız', e instanceof Error ? e.message : String(e));
-    } finally {
-      setTranslating(false);
-    }
-  }, [article, reload, settings]);
-
-  useEffect(() => {
-    if (settings.translateOnOpen && article) {
-      ensureTranslated();
-    }
-  }, [article?.id, settings.translateOnOpen]);
-
   const onShare = useCallback(async () => {
     if (!article) return;
-    const title = article.translated_title ?? article.title;
+    const title = article.title;
     const url = article.url;
     try {
       if (await Sharing.isAvailableAsync()) {
@@ -121,13 +75,6 @@ export default function ArticleScreen() {
         <View style={{ flexDirection: 'row', gap: 6 }}>
           {article ? (
             <>
-              {(article.translated_title || article.translated_content) && (
-                <IconBtn
-                  name={showTranslation ? 'language' : 'language-outline'}
-                  onPress={() => setShowTranslation((v) => !v)}
-                  color={palette.text}
-                />
-              )}
               <IconBtn
                 name={article.is_favorite ? 'bookmark' : 'bookmark-outline'}
                 onPress={onToggleFav}
@@ -144,7 +91,7 @@ export default function ArticleScreen() {
         </View>
       ),
     });
-  }, [article, palette.text, showTranslation, onShare, onToggleFav, onOpenBrowser, navigation]);
+  }, [article, palette.text, onShare, onToggleFav, onOpenBrowser, navigation]);
 
   if (!article) {
     return (
@@ -154,12 +101,8 @@ export default function ArticleScreen() {
     );
   }
 
-  const title = (showTranslation ? article.translated_title : null) ?? article.title;
-  const body =
-    (showTranslation ? article.translated_content : null) ??
-    article.content_text ??
-    article.summary ??
-    '';
+  const title = article.title;
+  const body = article.content_text ?? article.summary ?? '';
 
   const fontScale = settings.readerFontScale;
 
@@ -206,21 +149,6 @@ export default function ArticleScreen() {
           ) : null}
         </View>
 
-        {!article.translated_title && !article.translated_content ? (
-          <Pressable
-            onPress={ensureTranslated}
-            style={[
-              styles.translateBtn,
-              { borderColor: palette.outline, backgroundColor: palette.surfaceMuted },
-            ]}
-          >
-            <Ionicons name="language" size={18} color={palette.primary} />
-            <Text style={{ color: palette.text, marginLeft: 8 }}>
-              {translating ? 'Çevriliyor…' : 'Türkçeye çevir'}
-            </Text>
-          </Pressable>
-        ) : null}
-
         <Text
           selectable
           style={[
@@ -264,15 +192,5 @@ const styles = StyleSheet.create({
   title: { marginTop: 16, fontWeight: '700' },
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 8 },
   metaText: { fontSize: 13 },
-  translateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginTop: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
   body: { marginTop: 16 },
 });

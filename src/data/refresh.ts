@@ -1,17 +1,17 @@
-import { listEnabledSources, markSourceFetched, upsertArticle } from '@/db/queries';
-import { getSettings } from '@/state/settings';
+import { getNewArticlesSince, listEnabledSources, markSourceFetched, upsertArticle } from '@/db/queries';
+import type { ArticleWithSource } from '@/db/types';
 
 import { fetchHtml } from './htmlFetcher';
 import { fetchRss } from './rssFetcher';
-import { translateToTurkish } from './translator';
 
 export interface RefreshResult {
   perSource: Array<{ id: number; url: string; ok: boolean; count: number; error?: string }>;
   totalNew: number;
+  newArticles: ArticleWithSource[];
 }
 
 export async function refreshAllSources(): Promise<RefreshResult> {
-  const settings = await getSettings();
+  const since = Date.now();
   const sources = await listEnabledSources();
   const perSource: RefreshResult['perSource'] = [];
   let totalNew = 0;
@@ -22,26 +22,8 @@ export async function refreshAllSources(): Promise<RefreshResult> {
       let savedCount = 0;
       for (const d of drafts) {
         if (!d.title || !d.title.trim()) continue;
-
-        let translatedTitle: string | null = d.translated_title ?? null;
-        if (settings.translateTitlesOnRefresh && !translatedTitle) {
-          try {
-            const r = await translateToTurkish(
-              { text: d.title, sourceLang: settings.defaultSourceLang },
-              {
-                provider: settings.translationProvider,
-                apiKey: settings.translationApiKey || undefined,
-                endpoint: settings.translationEndpoint || undefined,
-              },
-            );
-            if (r.source !== 'tr') translatedTitle = r.text;
-          } catch {
-            // ignore
-          }
-        }
-
-        await upsertArticle({ ...d, translated_title: translatedTitle });
-        savedCount++;
+        const inserted = await upsertArticle(d);
+        if (inserted) savedCount++;
       }
       await markSourceFetched(s.id);
       perSource.push({ id: s.id, url: s.url, ok: true, count: savedCount });
@@ -56,5 +38,7 @@ export async function refreshAllSources(): Promise<RefreshResult> {
       });
     }
   }
-  return { perSource, totalNew };
+
+  const newArticles = totalNew > 0 ? await getNewArticlesSince(since) : [];
+  return { perSource, totalNew, newArticles };
 }

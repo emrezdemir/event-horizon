@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerBackgroundFetch } from '@/background/task';
 import { getDb } from '@/db/client';
 import { refreshAllSources } from '@/data/refresh';
+import { ensureNotificationPermission, notifyNewArticles } from '@/notifications';
 import { initSettings, useSettings } from '@/state/settings';
 import { usePalette } from '@/theme';
 
@@ -16,9 +17,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      await initSettings();
+      const settings = await initSettings();
       await getDb();
       registerBackgroundFetch().catch(() => {});
+      if (settings.notifyOnNew) {
+        ensureNotificationPermission().catch(() => {});
+      }
       setReady(true);
     })();
   }, []);
@@ -26,9 +30,17 @@ export default function RootLayout() {
   // foreground 5dk yenileme — bg fetch garantisinden bağımsız
   useEffect(() => {
     if (!ready) return;
-    const id = setInterval(() => {
-      refreshAllSources().catch(() => {});
-    }, 5 * 60 * 1000);
+    const tick = async () => {
+      try {
+        const result = await refreshAllSources();
+        if (result.newArticles.length > 0) {
+          notifyNewArticles(result.newArticles).catch(() => {});
+        }
+      } catch {
+        // ignore
+      }
+    };
+    const id = setInterval(tick, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, [ready]);
 

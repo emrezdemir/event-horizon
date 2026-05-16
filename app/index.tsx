@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -27,6 +27,7 @@ export default function FeedScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [reachedEnd, setReachedEnd] = useState(false);
+  const loadingRef = useRef(false);
 
   const loadFirst = useCallback(async () => {
     const rows = await pageArticles(PAGE_SIZE, 0);
@@ -55,16 +56,22 @@ export default function FeedScreen() {
   }, [loadFirst]);
 
   const onEndReached = useCallback(async () => {
-    if (loadingMore || reachedEnd) return;
+    if (loadingRef.current || reachedEnd || items.length === 0) return;
+    loadingRef.current = true;
     setLoadingMore(true);
     try {
       const more = await pageArticles(PAGE_SIZE, items.length);
-      setItems((prev) => [...prev, ...more]);
+      setItems((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        const fresh = more.filter((m) => !seen.has(m.id));
+        return fresh.length ? [...prev, ...fresh] : prev;
+      });
       setReachedEnd(more.length < PAGE_SIZE);
     } finally {
+      loadingRef.current = false;
       setLoadingMore(false);
     }
-  }, [items.length, loadingMore, reachedEnd]);
+  }, [items.length, reachedEnd]);
 
   return (
     <View style={[styles.root, { backgroundColor: palette.background }]}>
@@ -111,6 +118,10 @@ export default function FeedScreen() {
             <View style={{ padding: 24 }}>
               <ActivityIndicator color={palette.primary} />
             </View>
+          ) : reachedEnd && items.length > 0 ? (
+            <Text style={[styles.endHint, { color: palette.textMuted }]}>
+              Hepsi yüklendi
+            </Text>
           ) : null
         }
         renderItem={({ item }) => (
@@ -147,7 +158,7 @@ function ArticleRow({
   item: ArticleWithSource;
   palette: ReturnType<typeof usePalette>;
 }) {
-  const title = item.translated_title ?? item.title;
+  const title = item.title;
   return (
     <Link href={`/article/${item.id}`} asChild>
       <Pressable style={styles.row}>
@@ -252,4 +263,5 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 96, paddingHorizontal: 32 },
   emptyTitle: { marginTop: 16, fontSize: 18, fontWeight: '700' },
   emptyHint: { marginTop: 8, textAlign: 'center', lineHeight: 20 },
+  endHint: { textAlign: 'center', paddingVertical: 24, fontSize: 12 },
 });

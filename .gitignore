@@ -29,6 +29,12 @@ yarn-error.*
 *.swp
 .DS_Store
 
+# Claude Code workspace
+.claude/
+
+# EAS
+.easignore
+
 # Tests
 coverage/
 

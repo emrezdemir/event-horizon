@@ -21,9 +21,6 @@ export interface Article {
   summary: string | null;
   content_html: string | null;
   content_text: string | null;
-  original_lang: string | null;
-  translated_title: string | null;
-  translated_content: string | null;
   image_url: string | null;
   is_read: number;
   is_favorite: number;
@@ -45,8 +42,5 @@ export interface ArticleDraft {
   summary?: string | null;
   content_html?: string | null;
   content_text?: string | null;
-  original_lang?: string | null;
-  translated_title?: string | null;
-  translated_content?: string | null;
   image_url?: string | null;
 }

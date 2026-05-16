@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   StyleSheet,
   Switch,
@@ -157,6 +159,10 @@ export default function SourcesScreen() {
       </Pressable>
 
       <Modal visible={showModal} animationType="slide" transparent onRequestClose={() => setShowModal(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowModal(false)}>
           <Pressable
             style={[
@@ -216,6 +222,7 @@ export default function SourcesScreen() {
             </View>
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
