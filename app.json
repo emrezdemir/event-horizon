@@ -30,9 +30,13 @@
         "POST_NOTIFICATIONS"
       ]
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "plugins": [
       "expo-router",
-      "expo-background-fetch",
+      "expo-background-task",
       "expo-notifications",
       [
         "expo-sqlite",

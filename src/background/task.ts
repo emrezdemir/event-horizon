@@ -1,4 +1,4 @@
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 
 import { refreshAllSources } from '@/data/refresh';
@@ -13,38 +13,34 @@ TaskManager.defineTask(REFRESH_TASK, async () => {
     if (result.newArticles.length > 0) {
       await notifyNewArticles(result.newArticles).catch(() => {});
     }
-    return result.totalNew > 0
-      ? BackgroundFetch.BackgroundFetchResult.NewData
-      : BackgroundFetch.BackgroundFetchResult.NoData;
+    return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {
     console.warn('[bg] refresh failed', e);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
 
 export async function registerBackgroundFetch(): Promise<void> {
-  const status = await BackgroundFetch.getStatusAsync();
-  if (status === BackgroundFetch.BackgroundFetchStatus.Restricted ||
-      status === BackgroundFetch.BackgroundFetchStatus.Denied) {
+  const status = await BackgroundTask.getStatusAsync();
+  if (status === BackgroundTask.BackgroundTaskStatus.Restricted) {
     console.info('[bg] disabled by OS / user');
     return;
   }
   const isRegistered = await TaskManager.isTaskRegisteredAsync(REFRESH_TASK);
   const settings = await getSettings();
-  const intervalSeconds = Math.max(15, settings.fetchMinutes) * 60;
+  // expo-background-task `minimumInterval`'i dakika cinsinden alır (iOS min 15 dk).
+  const intervalMinutes = Math.max(15, settings.fetchMinutes);
   if (isRegistered) {
-    await BackgroundFetch.unregisterTaskAsync(REFRESH_TASK).catch(() => {});
+    await BackgroundTask.unregisterTaskAsync(REFRESH_TASK).catch(() => {});
   }
-  await BackgroundFetch.registerTaskAsync(REFRESH_TASK, {
-    minimumInterval: intervalSeconds,
-    stopOnTerminate: false,
-    startOnBoot: true,
+  await BackgroundTask.registerTaskAsync(REFRESH_TASK, {
+    minimumInterval: intervalMinutes,
   });
 }
 
 export async function unregisterBackgroundFetch(): Promise<void> {
   const isRegistered = await TaskManager.isTaskRegisteredAsync(REFRESH_TASK);
   if (isRegistered) {
-    await BackgroundFetch.unregisterTaskAsync(REFRESH_TASK);
+    await BackgroundTask.unregisterTaskAsync(REFRESH_TASK);
   }
 }

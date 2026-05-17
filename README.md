@@ -53,7 +53,7 @@ Expo (React Native + TypeScript) ile yazılı — Android ve iOS'ta aynı kod.
 - **Sonsuz kaydırma** — Race-safe pagination, ID-set ile dedup, sayfa sonu
   göstergesi.
 - **Otomatik yenileme** — Uygulama açıkken her 5 dakikada bir, arka planda
-  `expo-background-fetch` ile (iOS aralıklarını sistem belirler, Android'de
+  `expo-background-task` ile (iOS aralıklarını sistem belirler, Android'de
   WorkManager).
 - **Bildirim** — Yeni haber geldiğinde local notification. Tek haberse başlığı,
   çoklu haberse özet listeyi gösterir. Ayarlardan kapatılabilir.
@@ -164,7 +164,7 @@ src/
 ├── state/
 │   └── settings.ts        # AsyncStorage + useSyncExternalStore
 ├── background/
-│   └── task.ts            # expo-background-fetch task'ı
+│   └── task.ts            # expo-background-task task'ı
 ├── notifications.ts       # expo-notifications wrapper (izin + tetik)
 ├── theme/                 # palet, koyu/açık tema
 └── utils/                 # tarih, format
